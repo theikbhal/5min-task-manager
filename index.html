@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>5-Minute Tasks</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="config.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -295,19 +297,54 @@
             width: 16px;
             height: 16px;
         }
+        .task-type {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+        }
+        .task-type-label {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-right: 8px;
+            color: white;
+        }
+        .task-type-label[data-type="5min"] {
+            background-color: #2ecc71;
+        }
+        .task-type-label[data-type="15min"] {
+            background-color: #f1c40f;
+        }
+        .task-type-label[data-type="30min"] {
+            background-color: #e67e22;
+        }
+        .task-type-label[data-type="big"] {
+            background-color: #e74c3c;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>5-Minute Tasks</h1>
         <div class="tabs">
-            <div class="tab active" onclick="taskManager.setActiveTab('all')">All Tasks</div>
-            <div class="tab" onclick="taskManager.setActiveTab('active')">Active Tasks</div>
-            <div class="tab" onclick="taskManager.setActiveTab('completed')">Completed Tasks</div>
+            <div class="tab active" data-tab="all">All Tasks</div>
+            <div class="tab" data-tab="active">Active Tasks</div>
+            <div class="tab" data-tab="completed">Completed Tasks</div>
+            <div class="tab" data-tab="big">Big Tasks</div>
         </div>
         <form id="taskForm" class="task-form">
-            <input type="text" id="taskInput" class="task-input" placeholder="Enter a 5-minute task..." required>
+            <input type="text" id="taskInput" class="task-input" placeholder="Enter a task..." required>
+            <select id="taskType" class="task-type">
+                <option value="5min">5-Minute Task</option>
+                <option value="15min">15-Minute Task</option>
+                <option value="30min">30-Minute Task</option>
+                <option value="big">Big Task</option>
+            </select>
             <button type="submit" class="btn btn-primary">Add Task</button>
+            <button type="button" class="btn btn-primary" onclick="window.taskManager.addSampleTasks()">Add Sample Tasks</button>
         </form>
         <ul id="taskList" class="task-list"></ul>
         <div id="pagination" class="pagination"></div>
@@ -340,21 +377,184 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+        import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+
+        // Initialize Supabase client
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         class TaskManager {
             constructor() {
-                this.tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                this.tasks = [];
                 this.currentPage = 1;
                 this.tasksPerPage = 20;
                 this.activeTimerId = null;
                 this.timerInterval = null;
-                this.timeLeft = 300; // 5 minutes in seconds
+                this.timeLeft = 300;
                 this.alarmSound = document.getElementById('timerAlarm');
                 this.activeTab = 'all';
                 this.setupEventListeners();
                 this.setupTimerControls();
                 this.setupDragAndDrop();
-                this.render();
+                this.loadTasks();
+            }
+
+            async loadTasks() {
+                try {
+                    console.log('Loading tasks from Supabase...');
+                    const { data, error } = await supabase
+                        .from('tasks')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (error) {
+                        console.error('Error loading tasks:', error);
+                        throw error;
+                    }
+                    console.log('Tasks loaded successfully:', data);
+                    this.tasks = data;
+                    this.render();
+                } catch (error) {
+                    console.error('Error loading tasks:', error);
+                }
+            }
+
+            async addTask(text) {
+                try {
+                    console.log('Adding new task to Supabase:', text);
+                    const taskType = document.getElementById('taskType').value;
+                    const duration = taskType === 'big' ? 0 : parseInt(taskType);
+                    
+                    const newTask = {
+                        text,
+                        completed: false,
+                        is_current: false,
+                        timer_active: false,
+                        created_at: new Date().toISOString(),
+                        task_type: taskType,
+                        duration: duration
+                    };
+
+                    const { data, error } = await supabase
+                        .from('tasks')
+                        .insert([newTask])
+                        .select();
+
+                    if (error) {
+                        console.error('Error adding task:', error);
+                        throw error;
+                    }
+                    console.log('Task added successfully:', data[0]);
+                    this.tasks.unshift(data[0]);
+                    this.saveTasks();
+                    this.render();
+                } catch (error) {
+                    console.error('Error adding task:', error);
+                }
+            }
+
+            async editTask(id, newText) {
+                try {
+                    const { error } = await supabase
+                        .from('tasks')
+                        .update({ text: newText })
+                        .eq('id', id);
+
+                    if (error) throw error;
+                    const task = this.tasks.find(t => t.id === id);
+                    if (task) {
+                        task.text = newText;
+                        this.saveTasks();
+                        this.render();
+                    }
+                } catch (error) {
+                    console.error('Error editing task:', error);
+                }
+            }
+
+            async deleteTask(id) {
+                try {
+                    const { error } = await supabase
+                        .from('tasks')
+                        .delete()
+                        .eq('id', id);
+
+                    if (error) throw error;
+                    if (id === this.activeTimerId) {
+                        this.stopTimer();
+                    }
+                    this.tasks = this.tasks.filter(t => t.id !== id);
+                    this.saveTasks();
+                    this.render();
+                } catch (error) {
+                    console.error('Error deleting task:', error);
+                }
+            }
+
+            async toggleComplete(id) {
+                try {
+                    const task = this.tasks.find(t => t.id === id);
+                    if (task) {
+                        const completed = !task.completed;
+                        const { error } = await supabase
+                            .from('tasks')
+                            .update({ 
+                                completed,
+                                completed_at: completed ? new Date().toISOString() : null,
+                                is_current: completed ? false : task.is_current
+                            })
+                            .eq('id', id);
+
+                        if (error) throw error;
+                        task.completed = completed;
+                        if (completed) {
+                            if (task.is_current) {
+                                task.is_current = false;
+                            }
+                            if (id === this.activeTimerId) {
+                                this.stopTimer();
+                            }
+                            task.completed_at = new Date().toISOString();
+                        } else {
+                            task.completed_at = null;
+                        }
+                        this.saveTasks();
+                        this.render();
+                    }
+                } catch (error) {
+                    console.error('Error toggling task completion:', error);
+                }
+            }
+
+            async setCurrentTask(id) {
+                try {
+                    // First, unset current status for all tasks
+                    const { error: updateError } = await supabase
+                        .from('tasks')
+                        .update({ is_current: false })
+                        .eq('is_current', true);
+
+                    if (updateError) throw updateError;
+
+                    // Then set the new current task
+                    const { error: setError } = await supabase
+                        .from('tasks')
+                        .update({ is_current: true })
+                        .eq('id', id);
+
+                    if (setError) throw setError;
+
+                    this.tasks.forEach(task => task.is_current = false);
+                    const task = this.tasks.find(t => t.id === id);
+                    if (task) {
+                        task.is_current = true;
+                        this.saveTasks();
+                        this.render();
+                    }
+                } catch (error) {
+                    console.error('Error setting current task:', error);
+                }
             }
 
             setupEventListeners() {
@@ -468,21 +668,14 @@
                 document.querySelectorAll('.tab').forEach(t => {
                     t.classList.toggle('active', t.textContent.toLowerCase().includes(tab));
                 });
+                // Set the task type dropdown to match the tab
+                const taskTypeSelect = document.getElementById('taskType');
+                if (tab === 'big') {
+                    taskTypeSelect.value = 'big';
+                } else {
+                    taskTypeSelect.value = '5min';
+                }
                 this.currentPage = 1;
-                this.render();
-            }
-
-            addTask(text) {
-                const task = {
-                    id: Date.now(),
-                    text,
-                    completed: false,
-                    isCurrent: false,
-                    timerActive: false,
-                    createdAt: new Date().toISOString()
-                };
-                this.tasks.unshift(task);
-                this.saveTasks();
                 this.render();
             }
 
@@ -509,15 +702,15 @@
                 if (task) {
                     task.completed = !task.completed;
                     if (task.completed) {
-                        if (task.isCurrent) {
-                            task.isCurrent = false;
+                        if (task.is_current) {
+                            task.is_current = false;
                         }
                         if (id === this.activeTimerId) {
                             this.stopTimer();
                         }
-                        task.completedAt = new Date().toISOString();
+                        task.completed_at = new Date().toISOString();
                     } else {
-                        task.completedAt = null;
+                        task.completed_at = null;
                     }
                     this.saveTasks();
                     this.render();
@@ -525,10 +718,10 @@
             }
 
             setCurrentTask(id) {
-                this.tasks.forEach(task => task.isCurrent = false);
+                this.tasks.forEach(task => task.is_current = false);
                 const task = this.tasks.find(t => t.id === id);
                 if (task) {
-                    task.isCurrent = true;
+                    task.is_current = true;
                     this.saveTasks();
                     this.render();
                 }
@@ -552,7 +745,7 @@
                         this.resetTimerCountdown();
                         const task = this.tasks.find(t => t.id === this.activeTimerId);
                         if (task) {
-                            task.timerActive = false;
+                            task.timer_active = false;
                             this.activeTimerId = null;
                             this.saveTasks();
                         }
@@ -604,9 +797,9 @@
                 const task = this.tasks.find(t => t.id === id);
                 if (task && !task.completed) {
                     // If this task already has an active timer, stop it
-                    if (task.timerActive) {
+                    if (task.timer_active) {
                         this.pauseTimer();
-                        task.timerActive = false;
+                        task.timer_active = false;
                         this.activeTimerId = null;
                         this.saveTasks();
                         this.render();
@@ -614,10 +807,10 @@
                     }
 
                     // Reset timer status for all tasks
-                    this.tasks.forEach(t => t.timerActive = false);
+                    this.tasks.forEach(t => t.timer_active = false);
                     
                     // Update task timer status
-                    task.timerActive = true;
+                    task.timer_active = true;
                     this.activeTimerId = id;
                     
                     // Start timer for this task
@@ -658,7 +851,7 @@
                 if (this.activeTimerId) {
                     const task = this.tasks.find(t => t.id === this.activeTimerId);
                     if (task) {
-                        task.timerActive = false;
+                        task.timer_active = false;
                     }
                     this.activeTimerId = null;
                     this.saveTasks();
@@ -667,7 +860,8 @@
             }
 
             saveTasks() {
-                localStorage.setItem('tasks', JSON.stringify(this.tasks));
+                // No need to save to localStorage anymore as we're using Supabase
+                // This method is kept for compatibility
             }
 
             render() {
@@ -680,6 +874,8 @@
                     filteredTasks = filteredTasks.filter(task => !task.completed);
                 } else if (this.activeTab === 'completed') {
                     filteredTasks = filteredTasks.filter(task => task.completed);
+                } else if (this.activeTab === 'big') {
+                    filteredTasks = filteredTasks.filter(task => task.task_type === 'big');
                 }
 
                 // Sort tasks based on the specified order:
@@ -687,17 +883,17 @@
                 // 2. Completed tasks in reverse chronological order
                 // 3. Other tasks in their original order
                 const sortedTasks = filteredTasks.sort((a, b) => {
-                    if (a.isCurrent && !b.isCurrent) return -1;
-                    if (!a.isCurrent && b.isCurrent) return 1;
+                    if (a.is_current && !b.is_current) return -1;
+                    if (!a.is_current && b.is_current) return 1;
                     
                     if (a.completed && b.completed) {
-                        return new Date(b.completedAt || 0) - new Date(a.completedAt || 0);
+                        return new Date(b.completed_at || 0) - new Date(a.completed_at || 0);
                     }
                     
                     if (a.completed && !b.completed) return 1;
                     if (!a.completed && b.completed) return -1;
                     
-                    return 0; // Maintain original order for non-completed tasks
+                    return 0;
                 });
 
                 const totalPages = Math.ceil(sortedTasks.length / this.tasksPerPage);
@@ -706,28 +902,39 @@
                 const currentTasks = sortedTasks.slice(start, end);
 
                 if (sortedTasks.length === 0) {
-                    taskList.innerHTML = `<div class="empty-state">No ${this.activeTab} tasks yet. Add your first 5-minute task!</div>`;
+                    let message = 'No tasks yet. ';
+                    if (this.activeTab === 'big') {
+                        message = 'No big tasks yet. Add your first big task!';
+                    } else if (this.activeTab === 'active') {
+                        message = 'No active tasks yet. Add your first task!';
+                    } else if (this.activeTab === 'completed') {
+                        message = 'No completed tasks yet.';
+                    } else {
+                        message = 'No tasks yet. Add your first task!';
+                    }
+                    taskList.innerHTML = `<div class="empty-state">${message}</div>`;
                 } else {
                     taskList.innerHTML = currentTasks.map(task => `
-                        <li class="task-item ${task.isCurrent ? 'current-task' : ''}" data-id="${task.id}" draggable="true">
+                        <li class="task-item ${task.is_current ? 'current-task' : ''}" data-id="${task.id}" draggable="true">
                             <div class="drag-handle">⋮⋮</div>
                             <input type="checkbox" ${task.completed ? 'checked' : ''} 
                                 onchange="taskManager.toggleComplete(${task.id})">
                             <div class="task-content">
                                 <div class="task-text" ${task.completed ? 'style="text-decoration: line-through;"' : ''}>
-                                    ${task.isCurrent ? '<span class="current-task-label">Current</span>' : ''}
+                                    ${task.is_current ? '<span class="current-task-label">Current</span>' : ''}
+                                    <span class="task-type-label" data-type="${task.task_type}">${task.task_type}</span>
                                     ${task.text}
-                                    ${task.isCurrent && !task.completed ? `
+                                    ${task.is_current && !task.completed && task.task_type !== 'big' ? `
                                         <div class="task-timer">
-                                            ${task.timerActive ? `
-                                                <div class="timer-display">05:00</div>
+                                            ${task.timer_active ? `
+                                                <div class="timer-display">${task.duration.toString().padStart(2, '0')}:00</div>
                                                 <div class="timer-progress">
                                                     <div class="timer-progress-bar"></div>
                                                 </div>
                                             ` : ''}
                                             <div class="timer-controls">
-                                                <button class="btn btn-timer ${task.timerActive ? 'stop' : 'start'}" onclick="taskManager.startTimer(${task.id})">
-                                                    ${task.timerActive ? `
+                                                <button class="btn btn-timer ${task.timer_active ? 'stop' : 'start'}" onclick="taskManager.startTimer(${task.id})">
+                                                    ${task.timer_active ? `
                                                         <svg class="icon icon-svg icon-pause icon-align" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28">
                                                             <path d="M24 3v22q0 0.406-0.297 0.703t-0.703 0.297h-8q-0.406 0-0.703-0.297t-0.297-0.703v-22q0-0.406 0.297-0.703t0.703-0.297h8q0.406 0 0.703 0.297t0.297 0.703zM10 3v22q0 0.406-0.297 0.703t-0.703 0.297h-8q-0.406 0-0.703-0.297t-0.297-0.703v-22q0-0.406 0.297-0.703t0.703-0.297h8q0.406 0 0.703 0.297t0.297 0.703z"></path>
                                                         </svg>
@@ -750,10 +957,10 @@
                                 </div>
                             </div>
                             <div class="task-actions">
-                                ${!task.isCurrent && !task.completed ? 
-                                    `<button class="btn btn-success" onclick="taskManager.setCurrentTask(${task.id})">Set Current</button>` : ''}
-                                <button class="btn btn-primary" onclick="taskManager.startEdit(${task.id})">Edit</button>
-                                <button class="btn btn-danger" onclick="taskManager.deleteTask(${task.id})">Delete</button>
+                                ${!task.is_current && !task.completed ? 
+                                    `<button class="btn btn-success" onclick="setCurrentTask(${task.id})">Set Current</button>` : ''}
+                                <button class="btn btn-primary" onclick="startEdit(${task.id})">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteTask(${task.id})">Delete</button>
                             </div>
                         </li>
                     `).join('');
@@ -811,14 +1018,124 @@
                 const task = this.tasks.find(t => t.id === id);
                 taskItem.classList.remove('edit-mode');
                 taskText.innerHTML = `
-                    ${task.isCurrent ? '<span class="current-task-label">Current</span>' : ''}
+                    ${task.is_current ? '<span class="current-task-label">Current</span>' : ''}
                     ${originalText}
-                    ${task.timerActive ? '<div class="timer-info timer-active">⏱️ Timer Running</div>' : ''}
+                    ${task.timer_active ? '<div class="timer-info timer-active">⏱️ Timer Running</div>' : ''}
                 `;
+            }
+
+            async addSampleTasks() {
+                const sampleTasks = {
+                    '5min': [
+                        "Quick code review",
+                        "Fix a small bug",
+                        "Update documentation",
+                        "Write a unit test",
+                        "Refactor a small function"
+                    ],
+                    '15min': [
+                        "Implement a new feature",
+                        "Write integration tests",
+                        "Optimize database query",
+                        "Update API endpoints",
+                        "Review pull requests"
+                    ],
+                    '30min': [
+                        "Design system architecture",
+                        "Plan sprint tasks",
+                        "Code review session",
+                        "Performance optimization",
+                        "Security audit"
+                    ],
+                    'big': [
+                        "Complete project milestone",
+                        "Major system refactoring",
+                        "Database migration",
+                        "Implement authentication system",
+                        "Build CI/CD pipeline",
+                        "Create comprehensive test suite",
+                        "Design and implement API",
+                        "Set up monitoring system",
+                        "Optimize application performance",
+                        "Implement caching strategy"
+                    ]
+                };
+
+                console.log('Adding sample tasks...');
+                for (const [type, tasks] of Object.entries(sampleTasks)) {
+                    for (const text of tasks) {
+                        const taskType = document.getElementById('taskType');
+                        taskType.value = type;
+                        await this.addTask(text);
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                console.log('Sample tasks added successfully');
             }
         }
 
-        const taskManager = new TaskManager();
+        // Make taskManager globally accessible
+        window.taskManager = new TaskManager();
+
+        // Add event listeners after taskManager is initialized
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add click handlers for tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.textContent.toLowerCase().replace(' tasks', '');
+                    window.taskManager.setActiveTab(tabName);
+                });
+            });
+
+            // Add form submit handler
+            document.getElementById('taskForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const input = document.getElementById('taskInput');
+                if (input.value.trim()) {
+                    window.taskManager.addTask(input.value.trim());
+                    input.value = '';
+                }
+            });
+        });
+    </script>
+
+    <script>
+        // Add global functions for onclick handlers
+        function startTimer(id) {
+            window.taskManager.startTimer(id);
+        }
+
+        function resetTimer(id) {
+            window.taskManager.resetTimer(id);
+        }
+
+        function setCurrentTask(id) {
+            window.taskManager.setCurrentTask(id);
+        }
+
+        function startEdit(id) {
+            window.taskManager.startEdit(id);
+        }
+
+        function deleteTask(id) {
+            window.taskManager.deleteTask(id);
+        }
+
+        function toggleComplete(id) {
+            window.taskManager.toggleComplete(id);
+        }
+
+        function finishEdit(id) {
+            window.taskManager.finishEdit(id);
+        }
+
+        function cancelEdit(id, originalText) {
+            window.taskManager.cancelEdit(id, originalText);
+        }
+
+        function changePage(page) {
+            window.taskManager.changePage(page);
+        }
     </script>
 </body>
 </html> 

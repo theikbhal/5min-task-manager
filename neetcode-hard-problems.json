@@ -1,0 +1,152 @@
+[
+  {
+    "index": 1,
+    "title": "Median of Two Sorted Arrays - Binary Search - Leetcode 4",
+    "solution": "Binary search for partition point in smaller array",
+    "link": "https://www.youtube.com/watch?v=q6IEA26hvXc"
+  },
+  {
+    "index": 2,
+    "title": "Trapping Rain Water - Google Interview Question - Leetcode 42",
+    "solution": "Two pointers tracking max heights from both sides",
+    "link": "https://www.youtube.com/watch?v=ZI2z5pq0TqA"
+  },
+  {
+    "index": 3,
+    "title": "Regular Expression Matching - Dynamic Programming Top-Down Memoization - Leetcode 10",
+    "solution": "DP with memoization for pattern matching",
+    "link": "https://www.youtube.com/watch?v=HAA8mgxlov8"
+  },
+  {
+    "index": 4,
+    "title": "Minimum Window Substring - Airbnb Interview Question - Leetcode 76",
+    "solution": "Sliding window with hashmap for character frequency",
+    "link": "https://www.youtube.com/watch?v=jSto0O4AJbM"
+  },
+  {
+    "index": 5,
+    "title": "LARGEST RECTANGLE IN HISTOGRAM - Leetcode 84 - Python",
+    "solution": "Monotonic stack for nearest smaller elements",
+    "link": "https://www.youtube.com/watch?v=zx5Sw9130L0"
+  },
+  {
+    "index": 6,
+    "title": "Sliding Window Maximum - Monotonic Queue - Leetcode 239",
+    "solution": "Monotonic decreasing queue tracks window maximums",
+    "link": "https://www.youtube.com/watch?v=DfljaUwZsOk"
+  },
+  {
+    "index": 7,
+    "title": "Jump Game II - Greedy - Leetcode 45 - Python",
+    "solution": "Greedy approach tracking farthest reachable position",
+    "link": "https://www.youtube.com/watch?v=dJ7sWiOoK7g"
+  },
+  {
+    "index": 8,
+    "title": "Alien Dictionary - Topological Sort - Leetcode 269 - Python",
+    "solution": "Graph construction + topological sort of letter relationships",
+    "link": "https://www.youtube.com/watch?v=6kTZYvNNyps"
+  },
+  {
+    "index": 9,
+    "title": "Find Median from Data Stream - Heap & Priority Queue - Leetcode 295",
+    "solution": "Two heaps (max-heap for lower half, min-heap for upper)",
+    "link": "https://www.youtube.com/watch?v=itmhHWaHupI"
+  },
+  {
+    "index": 10,
+    "title": "Word Ladder - Breadth First Search - Leetcode 127 - Python",
+    "solution": "BFS for shortest transformation sequence",
+    "link": "https://www.youtube.com/watch?v=h9iTnkgv05E"
+  },
+  {
+    "index": 11,
+    "title": "Edit Distance - Dynamic Programming - Leetcode 72 - Python",
+    "solution": "DP for minimum operations between strings",
+    "link": "https://www.youtube.com/watch?v=XYi2-LPrwm4"
+  },
+  {
+    "index": 12,
+    "title": "First Missing Positive - Leetcode 41 - Python",
+    "solution": "In-place array manipulation marking presence of positives",
+    "link": "https://www.youtube.com/watch?v=8g78yfzMlao"
+  },
+  {
+    "index": 13,
+    "title": "Burst Baloons - Dynamic Programming - Leetcode 312 - Python",
+    "solution": "DP for maximum coins from optimal burst order",
+    "link": "https://www.youtube.com/watch?v=VFskby7lUbw"
+  },
+  {
+    "index": 14,
+    "title": "Number of Ways to Rearrange Sticks With K Sticks Visible - Dynamic Programming - Leetcode 1866",
+    "solution": "DP counting arrangements with K visible sticks",
+    "link": "https://www.youtube.com/watch?v=O761YBjGxGA"
+  },
+  {
+    "index": 15,
+    "title": "Stickers to Spell Word - DP Memoization - Leetcode 691 - Python",
+    "solution": "DP with memoization for minimum stickers needed",
+    "link": "https://www.youtube.com/watch?v=hsomLb6mUdI"
+  },
+  {
+    "index": 16,
+    "title": "Minimum Interval to Include Each Query - Leetcode 1851 - Python",
+    "solution": "Sort + min heap for smallest interval per query",
+    "link": "https://www.youtube.com/watch?v=5hQ5WWW5awQ"
+  },
+  {
+    "index": 17,
+    "title": "Reconstruct Itinerary - Leetcode 332 - Python",
+    "solution": "Eulerian path using DFS with backtracking",
+    "link": "https://www.youtube.com/watch?v=ZyB_gQ8vqGA"
+  },
+  {
+    "index": 18,
+    "title": "Serialize and Deserialize Binary Tree - Preorder Traversal - Leetcode 297 - Python",
+    "solution": "Preorder traversal with null markers",
+    "link": "https://www.youtube.com/watch?v=u4JAi2JJhI8"
+  },
+  {
+    "index": 19,
+    "title": "Binary Tree Maximum Path Sum - DFS - Leetcode 124 - Python",
+    "solution": "Post-order DFS calculating max path at each node",
+    "link": "https://www.youtube.com/watch?v=Hr5cWUld4vU"
+  },
+  {
+    "index": 20,
+    "title": "Longest Increasing Path in a Matrix - Leetcode 329",
+    "solution": "DFS with memoization for longest increasing sequence",
+    "link": "https://www.youtube.com/watch?v=wCc_nd-GiEc"
+  },
+  {
+    "index": 21,
+    "title": "Split Array Largest Sum - Leetcode 410 - Python",
+    "solution": "Binary search on possible min-max sums",
+    "link": "https://www.youtube.com/watch?v=YUF3_eBdzsk"
+  },
+  {
+    "index": 22,
+    "title": "N-Queens II - Leetcode 52 - Python",
+    "solution": "Backtracking with optimized constraint checks",
+    "link": "https://www.youtube.com/watch?v=nalYyLZgvCY"
+  },
+  {
+    "index": 23,
+    "title": "Count Vowels Permutation - Dynamic Programming - Leetcode 1220 - Python",
+    "solution": "DP tracking permutations per vowel transition rules",
+    "link": "https://www.youtube.com/watch?v=VUVpTZVa7Ls"
+  },
+  {
+    "index": 24,
+    "title": "Maximum Performance of a Team - Leetcode 1383 - Python",
+    "solution": "Sort by efficiency, min heap for top K engineers by speed",
+    "link": "https://www.youtube.com/watch?v=Y7UTvogADH0"
+  },
+  {
+    "index": 25,
+    "title": "Leetcode 149 - Maximum Points on a Line - Python",
+    "solution": "Hash map tracking points with same slope",
+    "link": "https://www.youtube.com/watch?v=Bb9lOXUOnFw"
+  }
+]

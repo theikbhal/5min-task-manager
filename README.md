@@ -1,40 +1,45 @@
 # 5-Minute Task Manager
 
-A simple, elegant task manager for 5-minute tasks with built-in timer functionality.
+A simple and efficient task management application that helps you focus on tasks in 5-minute intervals. Built with HTML, CSS, and JavaScript, using Supabase for data storage.
 
 ## Features
 
-- Add, edit, and delete tasks
-- Built-in 5-minute timer for each task
-- Mark tasks as current
-- Drag and drop reordering
-- Filter tasks (All/Active/Completed)
-- Local storage persistence
+- Quick 5-minute task management
+- Timer functionality with audio notifications
+- Task categorization (5min and Big Tasks)
+- Real-time task updates
+- Drag and drop task reordering
+- Local storage backup
 - Responsive design
 
-## Deployment
+## Setup
 
-This project is deployed using GitHub Pages. To deploy your own version:
-
-1. Fork this repository
-2. Go to repository Settings
-3. Navigate to "Pages" in the sidebar
-4. Under "Source", select "main" branch
-5. Click "Save"
-6. Your site will be available at `username.github.io/repository-name`
-
-## Local Development
-
-To run locally:
 1. Clone the repository
-2. Open `index.html` in your web browser
+2. Create a Supabase project and get your API keys
+3. Create a `config.js` file with your Supabase credentials:
+```javascript
+const SUPABASE_URL = 'your-project-url';
+const SUPABASE_ANON_KEY = 'your-anon-key';
+```
+4. Open `index.html` in your browser or serve it using a local server:
+```bash
+python -m http.server 8000
+```
 
-No build process or dependencies required!
+## Database Setup
 
-## Technologies Used
+1. Go to your Supabase project
+2. Open the SQL Editor
+3. Run the `schema.sql` file to create the necessary tables and indexes
+4. Run the `migrate.sql` file to add any new columns if needed
 
-- HTML5
-- CSS3
-- Vanilla JavaScript
-- Local Storage API
-- Drag and Drop API
+## Development
+
+- `index.html` - Main application file
+- `config.js` - Configuration file for Supabase credentials
+- `schema.sql` - Database schema
+- `migrate.sql` - Database migration script
+
+## License
+
+MIT License
