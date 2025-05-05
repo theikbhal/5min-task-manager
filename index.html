@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5-Minute Tasks</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.4;
+            margin: 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            color: #333;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            background: #f5f5f5;
+            color: #666;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+        .task-form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .task-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        .btn-timer {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .btn-timer.start {
+            background-color: #738d00;
+        }
+        .btn-timer.start:hover {
+            background-color: #8aa902;
+        }
+        .btn-timer.stop {
+            background-color: #f89406;
+        }
+        .btn-timer.stop:hover {
+            background-color: #fda425;
+        }
+        .btn-timer.reset {
+            background-color: #c10841;
+        }
+        .btn-timer.reset:hover {
+            background-color: #d70a49;
+        }
+        .icon-svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+        .icon-align {
+            vertical-align: middle;
+        }
+        .hide {
+            display: none;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            gap: 8px;
+            cursor: move;
+            transition: background-color 0.2s;
+        }
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        .task-item.dragging {
+            opacity: 0.5;
+            background: #f8f9fa;
+        }
+        .drag-handle {
+            cursor: move;
+            color: #999;
+            padding: 0 5px;
+        }
+        .drag-handle:hover {
+            color: #666;
+        }
+        .task-text {
+            flex: 1;
+            font-size: 14px;
+        }
+        .task-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .page-btn {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+            background: white;
+            font-size: 13px;
+        }
+        .page-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        .edit-mode {
+            background-color: #fff3cd;
+        }
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 15px;
+        }
+        .current-task {
+            background-color: #e8f4f8;
+            border-left: 3px solid #3498db;
+        }
+        .current-task .task-text {
+            font-weight: 600;
+        }
+        .current-task-label {
+            background-color: #3498db;
+            color: white;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-right: 6px;
+        }
+        .timer-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+        .timer-active {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        .timer-container {
+            display: none;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            padding: 15px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+        .timer-container.active {
+            display: block;
+        }
+        .timer-display {
+            font-size: 48px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .timer-progress {
+            width: 100%;
+            height: 4px;
+            background: #eee;
+            margin: 10px 0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .timer-progress-bar {
+            height: 100%;
+            background: #3498db;
+            width: 0%;
+            transition: width 1s linear;
+        }
+        .timer-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .task-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .task-timer {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 10px;
+            gap: 5px;
+        }
+        .timer-display {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+            font-family: monospace;
+            margin: 0 5px;
+        }
+        .timer-progress {
+            width: 60px;
+            height: 3px;
+            background: #eee;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 0 5px;
+        }
+        .timer-progress-bar {
+            height: 100%;
+            background: #3498db;
+            width: 0%;
+            transition: width 1s linear;
+        }
+        .timer-controls {
+            display: inline-flex;
+            gap: 5px;
+        }
+        .btn-timer {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        .icon-svg {
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>5-Minute Tasks</h1>
+        <div class="tabs">
+            <div class="tab active" onclick="taskManager.setActiveTab('all')">All Tasks</div>
+            <div class="tab" onclick="taskManager.setActiveTab('active')">Active Tasks</div>
+            <div class="tab" onclick="taskManager.setActiveTab('completed')">Completed Tasks</div>
+        </div>
+        <form id="taskForm" class="task-form">
+            <input type="text" id="taskInput" class="task-input" placeholder="Enter a 5-minute task..." required>
+            <button type="submit" class="btn btn-primary">Add Task</button>
+        </form>
+        <ul id="taskList" class="task-list"></ul>
+        <div id="pagination" class="pagination"></div>
+        <div id="timerContainer" class="timer-container">
+            <div class="timer-label">5 Minute Timer</div>
+            <div class="timer-display">05:00</div>
+            <div class="timer-progress">
+                <div class="timer-progress-bar"></div>
+            </div>
+            <div class="timer-controls">
+                <button id="startTimer" class="btn btn-timer start">
+                    <svg class="icon icon-svg icon-play icon-align" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 28">
+                        <path d="M21.625 14.484l-20.75 11.531q-0.359 0.203-0.617 0.047t-0.258-0.562v-23q0-0.406 0.258-0.562t0.617 0.047l20.75 11.531q0.359 0.203 0.359 0.484t-0.359 0.484z"></path>
+                    </svg>
+                    <svg class="icon icon-svg icon-pause icon-align hide" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28">
+                        <path d="M24 3v22q0 0.406-0.297 0.703t-0.703 0.297h-8q-0.406 0-0.703-0.297t-0.297-0.703v-22q0-0.406 0.297-0.703t0.703-0.297h8q0.406 0 0.703 0.297t0.297 0.703zM10 3v22q0 0.406-0.297 0.703t-0.703 0.297h-8q-0.406 0-0.703-0.297t-0.297-0.703v-22q0-0.406 0.297-0.703t0.703-0.297h8q0.406 0 0.703 0.297t0.297 0.703z"></path>
+                    </svg>
+                    <span id="play-pause-text">Start</span>
+                </button>
+                <button id="resetTimer" class="btn btn-timer reset">
+                    <svg class="icon icon-svg icon-rotate-left icon-align" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 26">
+                        <path d="M24 14q0 2.438-0.953 4.656t-2.562 3.828-3.828 2.562-4.656 0.953q-2.688 0-5.109-1.133t-4.125-3.195q-0.109-0.156-0.102-0.352t0.133-0.32l2.141-2.156q0.156-0.141 0.391-0.141 0.25 0.031 0.359 0.187 1.141 1.484 2.797 2.297t3.516 0.812q1.625 0 3.102-0.633t2.555-1.711 1.711-2.555 0.633-3.102-0.633-3.102-1.711-2.555-2.555-1.711-3.102-0.633q-1.531 0-2.938 0.555t-2.5 1.586l2.141 2.156q0.484 0.469 0.219 1.078-0.266 0.625-0.922 0.625h-7q-0.406 0-0.703-0.297t-0.297-0.703v-7q0-0.656 0.625-0.922 0.609-0.266 1.078 0.219l2.031 2.016q1.672-1.578 3.82-2.445t4.445-0.867q2.438 0 4.656 0.953t3.828 2.562 2.562 3.828 0.953 4.656z"></path>
+                    </svg>
+                    Reset
+                </button>
+            </div>
+            <audio id="timerAlarm" preload="auto">
+                <source src="timer.mp3" type="audio/mpeg">
+            </audio>
+        </div>
+    </div>
+
+    <script>
+        class TaskManager {
+            constructor() {
+                this.tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                this.currentPage = 1;
+                this.tasksPerPage = 20;
+                this.activeTimerId = null;
+                this.timerInterval = null;
+                this.timeLeft = 300; // 5 minutes in seconds
+                this.alarmSound = document.getElementById('timerAlarm');
+                this.activeTab = 'all';
+                this.setupEventListeners();
+                this.setupTimerControls();
+                this.setupDragAndDrop();
+                this.render();
+            }
+
+            setupEventListeners() {
+                document.getElementById('taskForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const input = document.getElementById('taskInput');
+                    if (input.value.trim()) {
+                        this.addTask(input.value.trim());
+                        input.value = '';
+                    }
+                });
+            }
+
+            setupTimerControls() {
+                const startBtn = document.getElementById('startTimer');
+                const resetBtn = document.getElementById('resetTimer');
+                const playIcon = startBtn.querySelector('.icon-play');
+                const pauseIcon = startBtn.querySelector('.icon-pause');
+                const playPauseText = startBtn.querySelector('#play-pause-text');
+                
+                startBtn.addEventListener('click', () => {
+                    if (this.timerInterval) {
+                        this.pauseTimer();
+                        startBtn.classList.remove('stop');
+                        startBtn.classList.add('start');
+                        playIcon.classList.remove('hide');
+                        pauseIcon.classList.add('hide');
+                        playPauseText.textContent = 'Start';
+                    } else {
+                        this.startTimerCountdown();
+                        startBtn.classList.remove('start');
+                        startBtn.classList.add('stop');
+                        playIcon.classList.add('hide');
+                        pauseIcon.classList.remove('hide');
+                        playPauseText.textContent = 'Stop';
+                    }
+                });
+
+                resetBtn.addEventListener('click', () => {
+                    this.resetTimerCountdown();
+                    startBtn.classList.remove('stop');
+                    startBtn.classList.add('start');
+                    playIcon.classList.remove('hide');
+                    pauseIcon.classList.add('hide');
+                    playPauseText.textContent = 'Start';
+                });
+            }
+
+            setupDragAndDrop() {
+                const taskList = document.getElementById('taskList');
+                
+                taskList.addEventListener('dragstart', (e) => {
+                    if (e.target.classList.contains('task-item')) {
+                        e.target.classList.add('dragging');
+                        e.dataTransfer.setData('text/plain', e.target.dataset.id);
+                    }
+                });
+
+                taskList.addEventListener('dragend', (e) => {
+                    if (e.target.classList.contains('task-item')) {
+                        e.target.classList.remove('dragging');
+                    }
+                });
+
+                taskList.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const draggingItem = taskList.querySelector('.dragging');
+                    if (!draggingItem) return;
+
+                    const siblings = [...taskList.querySelectorAll('.task-item:not(.dragging)')];
+                    const nextSibling = siblings.find(sibling => {
+                        const box = sibling.getBoundingClientRect();
+                        const offset = e.clientY - box.top - box.height / 2;
+                        return offset < 0;
+                    });
+
+                    taskList.insertBefore(draggingItem, nextSibling);
+                });
+
+                taskList.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const taskId = parseInt(e.dataTransfer.getData('text/plain'));
+                    const taskList = document.getElementById('taskList');
+                    const newOrder = [...taskList.querySelectorAll('.task-item')].map(item => 
+                        parseInt(item.dataset.id)
+                    );
+                    
+                    this.reorderTasks(taskId, newOrder);
+                });
+            }
+
+            reorderTasks(taskId, newOrder) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task) return;
+
+                // Remove task from current position
+                this.tasks = this.tasks.filter(t => t.id !== taskId);
+                
+                // Find the index in newOrder where this task should go
+                const newIndex = newOrder.indexOf(taskId);
+                
+                // Insert task at new position
+                this.tasks.splice(newIndex, 0, task);
+                
+                this.saveTasks();
+                this.render();
+            }
+
+            setActiveTab(tab) {
+                this.activeTab = tab;
+                document.querySelectorAll('.tab').forEach(t => {
+                    t.classList.toggle('active', t.textContent.toLowerCase().includes(tab));
+                });
+                this.currentPage = 1;
+                this.render();
+            }
+
+            addTask(text) {
+                const task = {
+                    id: Date.now(),
+                    text,
+                    completed: false,
+                    isCurrent: false,
+                    timerActive: false,
+                    createdAt: new Date().toISOString()
+                };
+                this.tasks.unshift(task);
+                this.saveTasks();
+                this.render();
+            }
+
+            editTask(id, newText) {
+                const task = this.tasks.find(t => t.id === id);
+                if (task) {
+                    task.text = newText;
+                    this.saveTasks();
+                    this.render();
+                }
+            }
+
+            deleteTask(id) {
+                if (id === this.activeTimerId) {
+                    this.stopTimer();
+                }
+                this.tasks = this.tasks.filter(t => t.id !== id);
+                this.saveTasks();
+                this.render();
+            }
+
+            toggleComplete(id) {
+                const task = this.tasks.find(t => t.id === id);
+                if (task) {
+                    task.completed = !task.completed;
+                    if (task.completed) {
+                        if (task.isCurrent) {
+                            task.isCurrent = false;
+                        }
+                        if (id === this.activeTimerId) {
+                            this.stopTimer();
+                        }
+                        task.completedAt = new Date().toISOString();
+                    } else {
+                        task.completedAt = null;
+                    }
+                    this.saveTasks();
+                    this.render();
+                }
+            }
+
+            setCurrentTask(id) {
+                this.tasks.forEach(task => task.isCurrent = false);
+                const task = this.tasks.find(t => t.id === id);
+                if (task) {
+                    task.isCurrent = true;
+                    this.saveTasks();
+                    this.render();
+                }
+            }
+
+            startTimerCountdown() {
+                if (this.timerInterval) return;
+                
+                const startTime = Date.now();
+                const endTime = startTime + (this.timeLeft * 1000);
+                
+                this.timerInterval = setInterval(() => {
+                    const now = Date.now();
+                    const remaining = Math.max(0, endTime - now);
+                    this.timeLeft = Math.ceil(remaining / 1000);
+                    
+                    this.updateTimerDisplay();
+                    
+                    if (remaining === 0) {
+                        this.playAlarm();
+                        this.resetTimerCountdown();
+                        const task = this.tasks.find(t => t.id === this.activeTimerId);
+                        if (task) {
+                            task.timerActive = false;
+                            this.activeTimerId = null;
+                            this.saveTasks();
+                        }
+                        this.render();
+                    }
+                }, 100);
+            }
+
+            pauseTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+
+            resetTimerCountdown() {
+                this.pauseTimer();
+                this.timeLeft = 300;
+                this.updateTimerDisplay();
+            }
+
+            updateTimerDisplay() {
+                const minutes = Math.floor(this.timeLeft / 60);
+                const seconds = this.timeLeft % 60;
+                const display = document.querySelector('.timer-display');
+                const progressBar = document.querySelector('.timer-progress-bar');
+                
+                display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                progressBar.style.width = `${((300 - this.timeLeft) / 300) * 100}%`;
+            }
+
+            playAlarm() {
+                // Reset the audio to start
+                this.alarmSound.currentTime = 0;
+                
+                // Play the alarm sound
+                this.alarmSound.play().catch(error => {
+                    console.error('Error playing alarm sound:', error);
+                });
+                
+                // Stop the sound after 2 seconds
+                setTimeout(() => {
+                    this.alarmSound.pause();
+                    this.alarmSound.currentTime = 0;
+                }, 2000);
+            }
+
+            startTimer(id) {
+                const task = this.tasks.find(t => t.id === id);
+                if (task && !task.completed) {
+                    // If this task already has an active timer, stop it
+                    if (task.timerActive) {
+                        this.pauseTimer();
+                        task.timerActive = false;
+                        this.activeTimerId = null;
+                        this.saveTasks();
+                        this.render();
+                        return;
+                    }
+
+                    // Reset timer status for all tasks
+                    this.tasks.forEach(t => t.timerActive = false);
+                    
+                    // Update task timer status
+                    task.timerActive = true;
+                    this.activeTimerId = id;
+                    
+                    // Start timer for this task
+                    this.resetTimerCountdown();
+                    this.startTimerCountdown();
+                    
+                    this.saveTasks();
+                    this.render();
+                }
+            }
+
+            resetTimer(id) {
+                const task = this.tasks.find(t => t.id === id);
+                if (task) {
+                    this.pauseTimer();
+                    this.resetTimerCountdown();
+                    
+                    // Update button state
+                    const startBtn = document.querySelector(`[data-id="${id}"] .btn-timer.start`);
+                    const playIcon = startBtn.querySelector('.icon-play');
+                    const pauseIcon = startBtn.querySelector('.icon-pause');
+                    const playPauseText = startBtn.querySelector('.play-pause-text');
+                    
+                    startBtn.classList.remove('stop');
+                    startBtn.classList.add('start');
+                    playIcon.classList.remove('hide');
+                    pauseIcon.classList.add('hide');
+                    playPauseText.textContent = 'Start';
+                }
+            }
+
+            stopTimer() {
+                const timerContainer = document.getElementById('timerContainer');
+                timerContainer.classList.remove('active');
+                this.pauseTimer();
+                this.resetTimerCountdown();
+                
+                if (this.activeTimerId) {
+                    const task = this.tasks.find(t => t.id === this.activeTimerId);
+                    if (task) {
+                        task.timerActive = false;
+                    }
+                    this.activeTimerId = null;
+                    this.saveTasks();
+                    this.render();
+                }
+            }
+
+            saveTasks() {
+                localStorage.setItem('tasks', JSON.stringify(this.tasks));
+            }
+
+            render() {
+                const taskList = document.getElementById('taskList');
+                const pagination = document.getElementById('pagination');
+                
+                // Filter tasks based on active tab
+                let filteredTasks = [...this.tasks];
+                if (this.activeTab === 'active') {
+                    filteredTasks = filteredTasks.filter(task => !task.completed);
+                } else if (this.activeTab === 'completed') {
+                    filteredTasks = filteredTasks.filter(task => task.completed);
+                }
+
+                // Sort tasks based on the specified order:
+                // 1. Current task first
+                // 2. Completed tasks in reverse chronological order
+                // 3. Other tasks in their original order
+                const sortedTasks = filteredTasks.sort((a, b) => {
+                    if (a.isCurrent && !b.isCurrent) return -1;
+                    if (!a.isCurrent && b.isCurrent) return 1;
+                    
+                    if (a.completed && b.completed) {
+                        return new Date(b.completedAt || 0) - new Date(a.completedAt || 0);
+                    }
+                    
+                    if (a.completed && !b.completed) return 1;
+                    if (!a.completed && b.completed) return -1;
+                    
+                    return 0; // Maintain original order for non-completed tasks
+                });
+
+                const totalPages = Math.ceil(sortedTasks.length / this.tasksPerPage);
+                const start = (this.currentPage - 1) * this.tasksPerPage;
+                const end = start + this.tasksPerPage;
+                const currentTasks = sortedTasks.slice(start, end);
+
+                if (sortedTasks.length === 0) {
+                    taskList.innerHTML = `<div class="empty-state">No ${this.activeTab} tasks yet. Add your first 5-minute task!</div>`;
+                } else {
+                    taskList.innerHTML = currentTasks.map(task => `
+                        <li class="task-item ${task.isCurrent ? 'current-task' : ''}" data-id="${task.id}" draggable="true">
+                            <div class="drag-handle">⋮⋮</div>
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                                onchange="taskManager.toggleComplete(${task.id})">
+                            <div class="task-content">
+                                <div class="task-text" ${task.completed ? 'style="text-decoration: line-through;"' : ''}>
+                                    ${task.isCurrent ? '<span class="current-task-label">Current</span>' : ''}
+                                    ${task.text}
+                                    ${task.isCurrent && !task.completed ? `
+                                        <div class="task-timer">
+                                            ${task.timerActive ? `
+                                                <div class="timer-display">05:00</div>
+                                                <div class="timer-progress">
+                                                    <div class="timer-progress-bar"></div>
+                                                </div>
+                                            ` : ''}
+                                            <div class="timer-controls">
+                                                <button class="btn btn-timer ${task.timerActive ? 'stop' : 'start'}" onclick="taskManager.startTimer(${task.id})">
+                                                    ${task.timerActive ? `
+                                                        <svg class="icon icon-svg icon-pause icon-align" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28">
+                                                            <path d="M24 3v22q0 0.406-0.297 0.703t-0.703 0.297h-8q-0.406 0-0.703-0.297t-0.297-0.703v-22q0-0.406 0.297-0.703t0.703-0.297h8q0.406 0 0.703 0.297t0.297 0.703zM10 3v22q0 0.406-0.297 0.703t-0.703 0.297h-8q-0.406 0-0.703-0.297t-0.297-0.703v-22q0-0.406 0.297-0.703t0.703-0.297h8q0.406 0 0.703 0.297t0.297 0.703z"></path>
+                                                        </svg>
+                                                        <span class="play-pause-text">Stop</span>
+                                                    ` : `
+                                                        <svg class="icon icon-svg icon-play icon-align" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 28">
+                                                            <path d="M21.625 14.484l-20.75 11.531q-0.359 0.203-0.617 0.047t-0.258-0.562v-23q0-0.406 0.258-0.562t0.617 0.047l20.75 11.531q0.359 0.203 0.359 0.484t-0.359 0.484z"></path>
+                                                        </svg>
+                                                        <span class="play-pause-text">Start</span>
+                                                    `}
+                                                </button>
+                                                <button class="btn btn-timer reset" onclick="taskManager.resetTimer(${task.id})">
+                                                    <svg class="icon icon-svg icon-rotate-left icon-align" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 26">
+                                                        <path d="M24 14q0 2.438-0.953 4.656t-2.562 3.828-3.828 2.562-4.656 0.953q-2.688 0-5.109-1.133t-4.125-3.195q-0.109-0.156-0.102-0.352t0.133-0.32l2.141-2.156q0.156-0.141 0.391-0.141 0.25 0.031 0.359 0.187 1.141 1.484 2.797 2.297t3.516 0.812q1.625 0 3.102-0.633t2.555-1.711 1.711-2.555 0.633-3.102-0.633-3.102-1.711-2.555-2.555-1.711-3.102-0.633q-1.531 0-2.938 0.555t-2.5 1.586l2.141 2.156q0.484 0.469 0.219 1.078-0.266 0.625-0.922 0.625h-7q-0.406 0-0.703-0.297t-0.297-0.703v-7q0-0.656 0.625-0.922 0.609-0.266 1.078 0.219l2.031 2.016q1.672-1.578 3.82-2.445t4.445-0.867q2.438 0 4.656 0.953t3.828 2.562 2.562 3.828 0.953 4.656z"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <div class="task-actions">
+                                ${!task.isCurrent && !task.completed ? 
+                                    `<button class="btn btn-success" onclick="taskManager.setCurrentTask(${task.id})">Set Current</button>` : ''}
+                                <button class="btn btn-primary" onclick="taskManager.startEdit(${task.id})">Edit</button>
+                                <button class="btn btn-danger" onclick="taskManager.deleteTask(${task.id})">Delete</button>
+                            </div>
+                        </li>
+                    `).join('');
+                }
+
+                if (totalPages > 1) {
+                    pagination.innerHTML = `
+                        <button class="page-btn" onclick="taskManager.changePage(1)" 
+                            ${this.currentPage === 1 ? 'disabled' : ''}>First</button>
+                        <button class="page-btn" onclick="taskManager.changePage(${this.currentPage - 1})"
+                            ${this.currentPage === 1 ? 'disabled' : ''}>Prev</button>
+                        <span class="page-btn active">Page ${this.currentPage} of ${totalPages}</span>
+                        <button class="page-btn" onclick="taskManager.changePage(${this.currentPage + 1})"
+                            ${this.currentPage === totalPages ? 'disabled' : ''}>Next</button>
+                        <button class="page-btn" onclick="taskManager.changePage(${totalPages})"
+                            ${this.currentPage === totalPages ? 'disabled' : ''}>Last</button>
+                    `;
+                } else {
+                    pagination.innerHTML = '';
+                }
+            }
+
+            changePage(page) {
+                const totalPages = Math.ceil(this.tasks.length / this.tasksPerPage);
+                if (page >= 1 && page <= totalPages) {
+                    this.currentPage = page;
+                    this.render();
+                }
+            }
+
+            startEdit(id) {
+                const taskItem = document.querySelector(`[data-id="${id}"]`);
+                const taskText = taskItem.querySelector('.task-text');
+                const currentText = taskText.textContent.replace('Current', '').replace('Timer Running', '').trim();
+                
+                taskItem.classList.add('edit-mode');
+                taskText.innerHTML = `
+                    <input type="text" class="task-input" value="${currentText}">
+                    <button class="btn btn-primary" onclick="taskManager.finishEdit(${id})">Save</button>
+                    <button class="btn btn-danger" onclick="taskManager.cancelEdit(${id}, '${currentText}')">Cancel</button>
+                `;
+            }
+
+            finishEdit(id) {
+                const taskItem = document.querySelector(`[data-id="${id}"]`);
+                const newText = taskItem.querySelector('.task-input').value.trim();
+                if (newText) {
+                    this.editTask(id, newText);
+                }
+            }
+
+            cancelEdit(id, originalText) {
+                const taskItem = document.querySelector(`[data-id="${id}"]`);
+                const taskText = taskItem.querySelector('.task-text');
+                const task = this.tasks.find(t => t.id === id);
+                taskItem.classList.remove('edit-mode');
+                taskText.innerHTML = `
+                    ${task.isCurrent ? '<span class="current-task-label">Current</span>' : ''}
+                    ${originalText}
+                    ${task.timerActive ? '<div class="timer-info timer-active">⏱️ Timer Running</div>' : ''}
+                `;
+            }
+        }
+
+        const taskManager = new TaskManager();
+    </script>
+</body>
+</html> 
